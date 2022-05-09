@@ -1,91 +1,146 @@
 import { Square } from './board/square'
 import { IPiece } from './pieces/piece'
-import { Board, SquareName } from './board/board'
+import { Board, SquareName, SquarePosition } from './board/board'
 import { Knight } from './pieces/knight'
 import { intBetween } from './utils'
 import { Game, PieceColor } from './game'
 
-type PositionDeltas = {
+//region types
+export type PositionDeltas = {
   dx: number
   dy: number
 }
 
-export class Move {
-  get isCheck(): boolean {
-    return this._isCheck
+export type MovePayload = {
+  names: {
+    from: SquareName
+    to: SquareName
   }
-  get isCapture(): boolean {
-    return this._isCapture
+  coords: {
+    from: SquarePosition
+    to: SquarePosition
   }
-  get isValid(): boolean {
-    return this._isValid
-  }
-  public readonly from: Square
-  public readonly to: Square
-  public readonly piece: IPiece
-  public readonly capture: IPiece | null
-  private _isValid: boolean
-  private _isCapture: boolean
-  private _isCheck: boolean
-  public readonly notation: string
+  piece: IPiece
+  capture: IPiece | null
+}
+
+//endregion
+
+export class PotentialMove {
+  //region properties
+  public readonly deltas: PositionDeltas
+  public readonly isCapture: boolean
   public readonly enPassantTarget: SquareName | null = null
-  public readonly positionDeltas: PositionDeltas
+  public readonly payload: MovePayload
 
-  protected constructor(from: Square, to: Square) {
-    if (!from.piece) throw new Error('Move must include from square with piece')
-    this.from = new Square(from.position, from.piece)
-    this.to = new Square(to.position, to.piece)
-    this.positionDeltas = {
-      dx: to.position.x - from.position.x,
-      dy: to.position.y - from.position.y,
+  //endregion
+
+  public constructor(payload: MovePayload) {
+    const { coords, capture } = payload
+    this.payload = payload
+
+    this.deltas = {
+      dx: coords.to.x - coords.from.x,
+      dy: coords.to.y - coords.from.y,
     }
-    this.piece = from.piece
-    this.capture = to.piece
-    this.notation = this.moveNotation()
+    this.isCapture = capture !== null
     this.enPassantTarget = this.getEnPassantTarget()
-    this._isValid = false
-    this._isCapture = false
-    this._isCheck = to.piece?.name === 'king'
   }
 
-  public static async getValidatedMove(from: Square, to: Square, game: Game) {
-    const instance = new Move(from, to)
-    const isValid = await instance._validate(game)
-    instance._isValid = isValid
-    instance._isCapture = isValid && instance.to.piece !== null
-    return instance
+  public static async getValidatedMoveFromSquares(
+    from: Square,
+    to: Square,
+    game: Game
+  ): Promise<ValidatedMove> {
+    if (!from.piece) throw new Error('From square must have piece')
+    const movePayload = {
+      names: {
+        from: from.name,
+        to: to.name,
+      },
+      coords: {
+        from: from.position,
+        to: to.position,
+      },
+      piece: from.piece,
+      capture: to.piece,
+    }
+    return await ValidatedMove.getValidatedMove(movePayload, game)
   }
 
-  private async _validate(game: Game): Promise<boolean> {
-    if (!this.piece.canMove(this.from, this.to)) return false
+  private getEnPassantTarget(): SquareName | null {
+    const { piece, coords } = this.payload
+    if (piece.name !== 'pawn' || Math.abs(this.deltas.dy) !== 2) return null
+    const y = piece.color === PieceColor.WHITE ? coords.from.y - 1 : coords.from.y + 1
+    const epTargetSquare = new Square({ x: coords.from.x, y })
+    return epTargetSquare.name
+  }
+}
 
-    const isOccupiedBySameColor =
-      this.from.piece?.color === this.to.piece?.color
-    const isSameSquare = this.to.name === this.from.name
+type ValidationPayload = {
+  isValid: boolean
+  isCheck: boolean
+  isLegal: boolean
+}
 
-    if (isOccupiedBySameColor || isSameSquare || !this.from.piece) return false
+type ValidatedMovePayload = {
+  move: MovePayload
+  validation: ValidationPayload
+}
 
-    if (
-      this.from.piece.name === 'pawn' &&
-      game.enPassantTarget === this.to.name
-    )
-      return true
+export class ValidatedMove extends PotentialMove {
+  public readonly isValid: boolean
+  public readonly isCheck: boolean
+  public readonly isLegal: boolean
 
-    if (this.piece instanceof Knight) return true
-
-    return await this.isPieceInTheWay(game.board)
-
-    // return !(await game.willPutKingInCheck(this))
+  protected constructor(payload: ValidatedMovePayload) {
+    super(payload.move)
+    const { isValid, isCheck, isLegal } = payload.validation
+    this.isValid = isValid
+    this.isCheck = isCheck
+    this.isLegal = isLegal
   }
 
-  private async isPieceInTheWay(board: Board) {
-    let xBetween = intBetween(this.from.position.x, this.to.position.x)
-    let yBetween = intBetween(this.from.position.y, this.to.position.y)
+  public static async getValidatedMove(movePayload: MovePayload, game: Game) {
+    const payload: ValidatedMovePayload = {
+      move: movePayload,
+      validation: {
+        isValid: false,
+        isCheck: false,
+        isLegal: false,
+      },
+    }
+    const potentialMove = new PotentialMove(movePayload)
+    payload.validation.isValid = await ValidatedMove._validate(potentialMove, game)
+
+    return new ValidatedMove(payload)
+  }
+
+  private static async _validate(move: PotentialMove, game: Game): Promise<boolean> {
+    const { piece, capture, names } = move.payload
+    if (!piece.canMove(move)) return false
+
+    const isOccupiedBySameColor = piece.color === capture?.color
+    const isSameSquare = names.to === names.from
+
+    if (isOccupiedBySameColor || isSameSquare) return false
+
+    if (piece.name === 'pawn' && game.enPassantTarget === names.to) return true
+
+    if (piece instanceof Knight) return true
+
+    return await this.isNoPiecesInBetween(move, game.board)
+  }
+
+  private static async isNoPiecesInBetween(move: PotentialMove, board: Board) {
+    const { coords } = move.payload
+    let xBetween = intBetween(coords.from.x, coords.to.x)
+    let yBetween = intBetween(coords.from.y, coords.to.y)
 
     if (xBetween.length === 0 && yBetween.length > 0) {
-      xBetween = [this.from.position.x]
+      xBetween = [coords.from.x]
     } else if (yBetween.length === 0 && xBetween.length > 0) {
-      yBetween = [this.from.position.y]
+      yBetween = [coords.from.y]
     }
     if (yBetween.length === 0 && xBetween.length === 0) return true
     let betweenSquaresValid: boolean[]
@@ -104,7 +159,7 @@ export class Move {
         yBetween.flatMap((yB) =>
           xBetween.map(
             (xB) =>
-              new Promise<boolean>((resolve, reject) => {
+              new Promise<boolean>((resolve) => {
                 const piece = board.getPieceByPosition({ x: xB, y: yB })
                 resolve(!piece)
               })
@@ -114,25 +169,5 @@ export class Move {
     }
 
     return !betweenSquaresValid.includes(false)
-  }
-
-  private moveNotation() {
-    if (!this._isValid) return ''
-    return `${
-      this.from.piece?.name === 'pawn'
-        ? ''
-        : this.from.piece?.symbol.toUpperCase()
-    }${this._isCapture ? 'x' : ''}${this.to.name}`
-  }
-
-  private getEnPassantTarget(): SquareName | null {
-    if (this.piece.name !== 'pawn' || Math.abs(this.positionDeltas.dy) !== 2)
-      return null
-    const y =
-      this.piece.color === PieceColor.WHITE
-        ? this.from.position.y - 1
-        : this.from.position.y + 1
-    const epTargetSquare = new Square({ x: this.from.position.x, y })
-    return epTargetSquare.name
   }
 }

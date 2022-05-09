@@ -1,81 +1,63 @@
 import { describe, expect, test } from 'vitest'
 import { Queen } from './queen'
 import { PieceColor } from '../game'
-import { Square } from '../board/square'
-import {
-  east,
-  north,
-  northEast,
-  northWest,
-  south,
-  southEast,
-  southWest,
-  west,
-} from '../directions'
+import { directions } from '../directions'
 
 describe('queen movement', () => {
   test('can move north', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 0, x: 0 })
 
-    for (const square of north) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).north) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   test('can move south', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 0, x: 7 })
 
-    for (const square of south) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).south) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   test('can move east', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 0, x: 0 })
 
-    for (const square of east) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).east) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   test('can move west', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 7, x: 0 })
 
-    for (const square of west) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).west) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   test('can move northwest', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 0, x: 7 })
 
-    for (const square of northWest) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).northWest) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   test('can move southwest', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 7, x: 7 })
 
-    for (const square of southWest) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).southWest) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   test('can move northeast', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 0, x: 0 })
 
-    for (const square of northEast) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).northEast) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   test('can move southeast', () => {
     const queen = new Queen(PieceColor.WHITE)
-    const squareOne = new Square({ y: 7, x: 0 })
 
-    for (const square of southEast) {
-      expect(queen.canMove(squareOne, square)).toBe(true)
+    for (const payload of directions(queen).southEast) {
+      expect(queen.canMove(payload)).toBe(true)
     }
   })
   // test('cannot move to same square', () => {

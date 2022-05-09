@@ -1,6 +1,8 @@
-import { Square } from '../board/square'
 import { AbstractPiece, IPiece } from './piece'
 import { PieceColor } from '../game'
+import { PotentialMove } from '../move'
+
+const abs = Math.abs
 
 export class Bishop extends AbstractPiece implements IPiece {
   constructor(color: PieceColor) {
@@ -8,11 +10,9 @@ export class Bishop extends AbstractPiece implements IPiece {
     super(color, symbol, 'bishop')
   }
 
-  public canMove(from: Square, to: Square): boolean {
-    const { y, x } = to.position
-    const { y: y2, x: x2 } = from.position
-    const dy = Math.abs(y - y2)
-    const dx = Math.abs(x - x2)
-    return dy === dx
+  public canMove(move: PotentialMove): boolean {
+    const { dx, dy } = move.deltas
+
+    return abs(dy) === abs(dx)
   }
 }

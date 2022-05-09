@@ -2,8 +2,9 @@
 import { Board, SquareName } from './board/board'
 import { Fen } from './fen'
 import { IPiece } from './pieces/piece'
-import { Move } from './move'
+import { PotentialMove } from './move'
 
+//region types
 export type Rank = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8'
 export type File = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h'
 
@@ -13,37 +14,49 @@ export enum SquareColor {
 }
 
 export enum PieceColor {
-  WHITE,
-  BLACK,
+  WHITE = 'WHITE',
+  BLACK = 'BLACK',
 }
 
 export interface IGame {
-  generateLegalMoves(): Move[]
+  generateLegalMoves(): PotentialMove[]
 }
 
 export interface IGame {
   board: Board
 }
+//endregion
 
 export class Game {
-  private prevState = {
-    moves: [],
-  }
-  private readonly _fen: Fen
-
-  constructor(
-    fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-  ) {
+  constructor(fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
     this._fen = new Fen(fen)
     this._board = new Board(fen)
     this._pieces = this._board.board
       .flat(2)
       .filter((sq) => !!sq.piece)
       .map((sq) => sq.piece as IPiece)
-    this._turn =
-      this._fen.sideToMove === 'w' ? PieceColor.WHITE : PieceColor.BLACK
+    this._turn = this._fen.sideToMove === 'w' ? PieceColor.WHITE : PieceColor.BLACK
     this._halfMoveClock = this._fen.halfMoveClock
     this._fullMoveClock = this._fen.fullMoveClock
+    this.makeMove.bind(this)
+    this.undoMove.bind(this)
+    this.isMoveCheck.bind(this)
+    this.generateLegalMoves.bind(this)
+  }
+
+  //region properties
+  private _fen: Fen
+
+  get fen(): Fen {
+    return this._fen
+  }
+
+  get friendlyColor(): PieceColor {
+    return this.turn
+  }
+
+  get enemyColor(): PieceColor {
+    return this.turn === PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE
   }
 
   private _kingInCheck = false
@@ -70,13 +83,9 @@ export class Game {
     return this._turn
   }
 
-  get fen(): Fen {
-    return this._fen
-  }
+  private _moves: PotentialMove[] = []
 
-  private _moves: Move[] = []
-
-  get moves(): Move[] {
+  get moves(): PotentialMove[] {
     return this._moves
   }
 
@@ -98,6 +107,8 @@ export class Game {
     return this._enPassantTarget
   }
 
+  //endregion
+
   public async perft(depth: number) {
     let moves = await this._board.generateMoves(this)
 
@@ -117,41 +128,35 @@ export class Game {
     return await this._board.generateMoves(this)
   }
 
-  public makeMove(move: Move) {
-    this._board.makeMove(move)
-    this._moves.push(move)
-    this._turn =
-      this._turn === PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE
+  public makeMove(move: PotentialMove) {
+    this._moves.push(this._board.makeMove(move))
+    this._turn = this._turn === PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE
     if (this._halfMoveClock === 1) {
       this._fullMoveClock++
     }
     this._halfMoveClock = this._halfMoveClock === 1 ? 0 : 1
     this._enPassantTarget = move.enPassantTarget
+    // this._kingInCheck = move.isCheck
   }
 
   public undoMove() {
     const prevMove = this._moves.pop()
     if (!prevMove) return false
-    this._turn =
-      this._turn === PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE
+    this._turn = this._turn === PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE
     if (this._halfMoveClock === 0) {
       this._fullMoveClock--
     }
     this._halfMoveClock = this._halfMoveClock === 1 ? 0 : 1
     this._board.undoMove(prevMove)
     this._enPassantTarget = prevMove.enPassantTarget
+    // this._kingInCheck = prevMove.isCheck
     return prevMove
   }
 
-  public async willPutKingInCheck(move: Move) {
-    this._board.makeMove(move)
-    const captures = await this._board.generateCaptures(this)
-    const kingCaptures = captures
-      .map((mv) => mv.capture?.name ?? 'empty')
-      .filter((name) => name === 'king')
-
+  public async isMoveCheck(move: PotentialMove) {
+    this.makeMove(move)
+    const checks = await this.board.getActiveChecks(this)
     this.undoMove()
-
-    return kingCaptures.length > 0
+    return checks.length > 0
   }
 }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { Board } from './board'
 import { Square } from './square'
-import { Game, PieceColor } from '../game'
+import { Game, PieceColor, SquareColor } from '../game'
 import { Bishop } from '../pieces/bishop'
 import { King } from '../pieces/king'
+import { Queen } from '../pieces/queen'
+import { PotentialMove } from '../move'
 
 const defaultPositions = {
   a1: 'R',
@@ -78,28 +80,28 @@ describe('Square constructors', () => {
     expect(square.name).toEqual('a1')
     expect(square.rank).toEqual('1')
     expect(square.file).toEqual('a')
-    expect(square.color).toEqual(PieceColor.BLACK)
+    expect(square.color).toEqual(SquareColor.DARK)
   })
   it('Should create h8', () => {
     const square = new Square({ y: 0, x: 7 })
     expect(square.name).toEqual('h8')
     expect(square.rank).toEqual('8')
     expect(square.file).toEqual('h')
-    expect(square.color).toEqual(PieceColor.BLACK)
+    expect(square.color).toEqual(SquareColor.DARK)
   })
   it('Should create a8', () => {
     const square = new Square({ y: 0, x: 0 })
     expect(square.name).toEqual('a8')
     expect(square.rank).toEqual('8')
     expect(square.file).toEqual('a')
-    expect(square.color).toEqual(PieceColor.WHITE)
+    expect(square.color).toEqual(SquareColor.LIGHT)
   })
   it('Should create h1', () => {
     const square = new Square({ y: 7, x: 7 })
     expect(square.name).toEqual('h1')
     expect(square.rank).toEqual('1')
     expect(square.file).toEqual('h')
-    expect(square.color).toEqual(PieceColor.WHITE)
+    expect(square.color).toEqual(SquareColor.LIGHT)
   })
 })
 
@@ -125,4 +127,15 @@ it('can use custom fen', () => {
   expect(board.board[7][4].piece).toBeInstanceOf(King)
   expect(board.board[0][3].piece).toBeNull()
   expect(board.board[7][3].piece).toBeNull()
+})
+
+it('can use custom fen 2', () => {
+  const board = new Board('rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3')
+  expect(board.board[7][3].piece).toBeInstanceOf(Queen)
+})
+
+it('generates active checks correctly', async () => {
+  const game = new Game('rnbqkbnr/ppp2ppp/4p3/3p4/Q1PP4/8/PP2PPPP/RNB1KBNR b KQkq - 1 3')
+  const checks = await game.board.getActiveChecks(game)
+  expect(checks.length).toBe(1)
 })

@@ -6,6 +6,7 @@ enum SquareColor {
   LIGHT,
   DARK,
 }
+
 const squareNameByPosition: SquareName[][] = [
   ['a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'],
   ['a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7'],
@@ -124,30 +125,7 @@ export class Square {
     return this._piece
   }
 
-  private _isMove: boolean = false
-
-  get isMove(): boolean {
-    return this._isMove
-  }
-
-  private _isCapture: boolean = false
-
-  get isCapture(): boolean {
-    return this._isCapture
-  }
-
-  public removePiece(): void {
-    this._piece = null
-  }
-
-  public movePiece(piece: IPiece): IPiece | null {
-    const oldPiece = this._piece
+  set piece(piece) {
     this._piece = piece
-    return oldPiece
-  }
-
-  public resetMoveFlags(): void {
-    this._isMove = false
-    this._isCapture = false
   }
 }

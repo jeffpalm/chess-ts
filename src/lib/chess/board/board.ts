@@ -2,7 +2,7 @@ import { Fen, FenPiece, FenRows, pieceFromFen } from '../fen'
 import { Square } from './square'
 import { IPiece } from '../pieces/piece'
 import { Game } from '../game'
-import { Move } from '../move'
+import { PotentialMove } from '../move'
 
 // region types
 export type SquarePosition = { y: number; x: number }
@@ -78,17 +78,25 @@ const fenPieces = ['p', 'P', 'n', 'N', 'b', 'B', 'r', 'R', 'q', 'Q', 'k', 'K']
 const fenNumbers = ['1', '2', '3', '4', '5', '6', '7', '8']
 
 export class Board {
-  constructor(
-    fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-  ) {
+  constructor(fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
     const _fen = new Fen(fen)
     this._board = Board.createBoard(_fen.rows)
+    this.getActiveChecks.bind(this)
+    this.getSquaresWithFriendlyPieces.bind(this)
+    this.getSquaresWithEnemyPieces.bind(this)
+    this.getEnemyKingSquare.bind(this)
+    this.makeMove.bind(this)
+    this.undoMove.bind(this)
   }
 
   private _board: Square[][] = []
 
   get board(): Square[][] {
     return this._board
+  }
+
+  get squares(): Square[] {
+    return this._board.flat(2)
   }
 
   private static createBoard(fen: FenRows): Square[][] {
@@ -122,41 +130,34 @@ export class Board {
     return this._board[position.y][position.x]
   }
 
-  public print(): void {
-    console.table(this._board)
-  }
-
-  public makeMove(move: Move) {
-    if (!move.from.piece) throw new Error('No piece on from square')
-    const { x: fromX, y: fromY } = move.from.position
-    const { x: toX, y: toY } = move.to.position
-    this._board[fromY][fromX].removePiece()
-    this._board[toY][toX].movePiece(move.from.piece)
+  public makeMove(move: PotentialMove) {
+    const { x: fromX, y: fromY } = move.payload.coords.from
+    const { x: toX, y: toY } = move.payload.coords.to
+    this._board[fromY][fromX].piece = null
+    this._board[toY][toX].piece = move.payload.piece
     return move
   }
 
-  public undoMove(move: Move) {
-    const { x: fromX, y: fromY } = move.from.position
-    const { x: toX, y: toY } = move.to.position
-    this._board[fromY][fromX] = move.from
-    this._board[toY][toX] = move.to
+  public undoMove(move: PotentialMove) {
+    const { x: fromX, y: fromY } = move.payload.coords.from
+    const { x: toX, y: toY } = move.payload.coords.to
+    this._board[fromY][fromX].piece = move.payload.piece
+    this._board[toY][toX].piece = move.payload.capture
   }
 
-  public async generateMoves(game: Game): Promise<Move[]> {
+  public async generateMoves(game: Game): Promise<PotentialMove[]> {
     const allSquares = this._board.flat(2)
-    const squaresWithCorrectPieces = allSquares.filter(
-      (sq) => sq.piece?.color === game.turn
-    )
+    const squaresWithCorrectPieces = allSquares.filter((sq) => sq.piece?.color === game.turn)
     const potentialDestinationSquares = allSquares.filter(
       (sq) => !squaresWithCorrectPieces.includes(sq)
     )
 
-    const promises: (Move | false)[] = await Promise.all(
+    const promises: (PotentialMove | false)[] = await Promise.all(
       squaresWithCorrectPieces.flatMap((from) =>
         potentialDestinationSquares.map(
           (to) =>
-            new Promise<Move | false>(async (resolve, reject) => {
-              const move = await Move.getValidatedMove(from, to, game)
+            new Promise<PotentialMove | false>(async (resolve, reject) => {
+              const move = await PotentialMove.getValidatedMoveFromSquares(from, to, game)
               if (move.isValid) {
                 resolve(move)
                 return
@@ -167,10 +168,43 @@ export class Board {
         )
       )
     )
-    return promises.filter((m) => m !== false) as Move[]
+    return promises.filter((m) => m !== false) as PotentialMove[]
   }
 
-  public async generateCaptures(game: Game): Promise<Move[]> {
-    return (await this.generateMoves(game)).filter((mv) => mv.isCapture)
+  public async getActiveChecks(game: Game): Promise<PotentialMove[]> {
+    const output: PotentialMove[] = []
+    const squaresWithEnemyPieces = this.getSquaresWithEnemyPieces(game)
+    const friendlyKingSquare = this.getFriendlyKingSquare(game)
+    for (const square of squaresWithEnemyPieces) {
+      const move = await PotentialMove.getValidatedMoveFromSquares(square, friendlyKingSquare, game)
+      if (move.isValid) {
+        output.push(move)
+      }
+    }
+    return output
+  }
+
+  private getSquaresWithFriendlyPieces(game: Game): Square[] {
+    return this.squares.filter((sq) => sq.piece?.color === game.friendlyColor)
+  }
+
+  private getSquaresWithEnemyPieces(game: Game): Square[] {
+    return this.squares.filter((sq) => !!sq.piece && sq.piece.color !== game.turn)
+  }
+
+  private getEnemyKingSquare(game: Game): Square {
+    const square = this.squares.find(
+      (sq) => sq.piece?.name === 'king' && sq.piece?.color === game.enemyColor
+    )
+    if (!square) throw new Error('No enemy king found')
+    return square
+  }
+
+  private getFriendlyKingSquare(game: Game): Square {
+    const square = this.squares.find(
+      (sq) => sq.piece?.name === 'king' && sq.piece?.color === game.friendlyColor
+    )
+    if (!square) throw new Error('No friendly king found')
+    return square
   }
 }
