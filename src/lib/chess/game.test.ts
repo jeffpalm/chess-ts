@@ -130,6 +130,15 @@ describe.concurrent('game behavior', () => {
     )
     expect(await game.isMoveCheck(nonCheckMove)).toBe(false)
   })
+  it('gets active checks', async () => {
+    const game = new Game('rnbqkbnr/pp2pppp/8/2pp4/Q1PP4/8/PP2PPPP/RNB1KBNR b KQkq - 1 3')
+
+    const activeChecks = await game.getActiveChecks()
+
+    expect(activeChecks.length).toBe(1)
+    expect(activeChecks[0].payload.names.from).toBe('a4')
+    expect(activeChecks[0].payload.names.to).toBe('e8')
+  })
   // it('will handle pinned pieces correctly', async () => {
   //   const pinnedKnight = {
   //     fen: 'r1bqkbnr/ppp2ppp/2n1p3/3p4/Q1PP1B2/8/PP2PPPP/RN2KBNR b KQkq - 0 1',

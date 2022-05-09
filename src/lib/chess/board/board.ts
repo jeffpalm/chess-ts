@@ -81,12 +81,6 @@ export class Board {
   constructor(fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
     const _fen = new Fen(fen)
     this._board = Board.createBoard(_fen.rows)
-    this.getActiveChecks.bind(this)
-    this.getSquaresWithFriendlyPieces.bind(this)
-    this.getSquaresWithEnemyPieces.bind(this)
-    this.getEnemyKingSquare.bind(this)
-    this.makeMove.bind(this)
-    this.undoMove.bind(this)
   }
 
   private _board: Square[][] = []
@@ -145,30 +139,23 @@ export class Board {
     this._board[toY][toX].piece = move.payload.capture
   }
 
-  public async generateMoves(game: Game): Promise<PotentialMove[]> {
+  public generateMoves(game: Game): PotentialMove[] {
     const allSquares = this._board.flat(2)
     const squaresWithCorrectPieces = allSquares.filter((sq) => sq.piece?.color === game.turn)
     const potentialDestinationSquares = allSquares.filter(
       (sq) => !squaresWithCorrectPieces.includes(sq)
     )
 
-    const promises: (PotentialMove | false)[] = await Promise.all(
-      squaresWithCorrectPieces.flatMap((from) =>
-        potentialDestinationSquares.map(
-          (to) =>
-            new Promise<PotentialMove | false>(async (resolve, reject) => {
-              const move = await PotentialMove.getValidatedMoveFromSquares(from, to, game)
-              if (move.isValid) {
-                resolve(move)
-                return
-              }
-              resolve(false)
-              return
-            })
-        )
-      )
-    )
-    return promises.filter((m) => m !== false) as PotentialMove[]
+    const output: PotentialMove[] = []
+    for (const from of squaresWithCorrectPieces) {
+      for (const to of potentialDestinationSquares) {
+        const move = PotentialMove.getValidatedMoveFromSquares(from, to, game)
+        if (move.isValid) {
+          output.push(move)
+        }
+      }
+    }
+    return output
   }
 
   public async getActiveChecks(game: Game): Promise<PotentialMove[]> {

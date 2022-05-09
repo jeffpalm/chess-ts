@@ -47,11 +47,7 @@ export class PotentialMove {
     this.enPassantTarget = this.getEnPassantTarget()
   }
 
-  public static async getValidatedMoveFromSquares(
-    from: Square,
-    to: Square,
-    game: Game
-  ): Promise<ValidatedMove> {
+  public static getValidatedMoveFromSquares(from: Square, to: Square, game: Game): ValidatedMove {
     if (!from.piece) throw new Error('From square must have piece')
     const movePayload = {
       names: {
@@ -65,7 +61,7 @@ export class PotentialMove {
       piece: from.piece,
       capture: to.piece,
     }
-    return await ValidatedMove.getValidatedMove(movePayload, game)
+    return ValidatedMove.getValidatedMove(movePayload, game)
   }
 
   private getEnPassantTarget(): SquareName | null {
@@ -101,7 +97,7 @@ export class ValidatedMove extends PotentialMove {
     this.isLegal = isLegal
   }
 
-  public static async getValidatedMove(movePayload: MovePayload, game: Game) {
+  public static getValidatedMove(movePayload: MovePayload, game: Game) {
     const payload: ValidatedMovePayload = {
       move: movePayload,
       validation: {
@@ -111,12 +107,12 @@ export class ValidatedMove extends PotentialMove {
       },
     }
     const potentialMove = new PotentialMove(movePayload)
-    payload.validation.isValid = await ValidatedMove._validate(potentialMove, game)
+    payload.validation.isValid = ValidatedMove._validate(potentialMove, game)
 
     return new ValidatedMove(payload)
   }
 
-  private static async _validate(move: PotentialMove, game: Game): Promise<boolean> {
+  private static _validate(move: PotentialMove, game: Game): boolean {
     const { piece, capture, names } = move.payload
     if (!piece.canMove(move)) return false
 
@@ -129,10 +125,10 @@ export class ValidatedMove extends PotentialMove {
 
     if (piece instanceof Knight) return true
 
-    return await this.isNoPiecesInBetween(move, game.board)
+    return this.isNoPiecesInBetween(move, game.board)
   }
 
-  private static async isNoPiecesInBetween(move: PotentialMove, board: Board) {
+  private static isNoPiecesInBetween(move: PotentialMove, board: Board) {
     const { coords } = move.payload
     let xBetween = intBetween(coords.from.x, coords.to.x)
     let yBetween = intBetween(coords.from.y, coords.to.y)
@@ -145,26 +141,16 @@ export class ValidatedMove extends PotentialMove {
     if (yBetween.length === 0 && xBetween.length === 0) return true
     let betweenSquaresValid: boolean[]
     if (xBetween.length === yBetween.length) {
-      betweenSquaresValid = await Promise.all(
-        xBetween.map(
-          (xB, i) =>
-            new Promise<boolean>((resolve) => {
-              const piece = board.getPieceByPosition({ x: xB, y: yBetween[i] })
-              resolve(!piece)
-            })
-        )
-      )
+      betweenSquaresValid = xBetween.map((xB, i) => {
+        const piece = board.getPieceByPosition({ x: xB, y: yBetween[i] })
+        return !piece
+      })
     } else {
-      betweenSquaresValid = await Promise.all(
-        yBetween.flatMap((yB) =>
-          xBetween.map(
-            (xB) =>
-              new Promise<boolean>((resolve) => {
-                const piece = board.getPieceByPosition({ x: xB, y: yB })
-                resolve(!piece)
-              })
-          )
-        )
+      betweenSquaresValid = yBetween.flatMap((yB) =>
+        xBetween.map((xB) => {
+          const piece = board.getPieceByPosition({ x: xB, y: yB })
+          return !piece
+        })
       )
     }
 

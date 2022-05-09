@@ -3,6 +3,7 @@ import { Board, SquareName } from './board/board'
 import { Fen } from './fen'
 import { IPiece } from './pieces/piece'
 import { PotentialMove } from './move'
+import { Square } from './board/square'
 
 //region types
 export type Rank = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8'
@@ -25,6 +26,7 @@ export interface IGame {
 export interface IGame {
   board: Board
 }
+
 //endregion
 
 export class Game {
@@ -38,10 +40,6 @@ export class Game {
     this._turn = this._fen.sideToMove === 'w' ? PieceColor.WHITE : PieceColor.BLACK
     this._halfMoveClock = this._fen.halfMoveClock
     this._fullMoveClock = this._fen.fullMoveClock
-    this.makeMove.bind(this)
-    this.undoMove.bind(this)
-    this.isMoveCheck.bind(this)
-    this.generateLegalMoves.bind(this)
   }
 
   //region properties
@@ -158,5 +156,30 @@ export class Game {
     const checks = await this.board.getActiveChecks(this)
     this.undoMove()
     return checks.length > 0
+  }
+
+  public async getActiveChecks(): Promise<PotentialMove[]> {
+    const output: PotentialMove[] = []
+    const squaresWithEnemyPieces = this.getSquaresWithEnemyPieces()
+    const friendlyKingSquare = this.getFriendlyKingSquare()
+    for (const square of squaresWithEnemyPieces) {
+      const move = await PotentialMove.getValidatedMoveFromSquares(square, friendlyKingSquare, this)
+      if (move.isValid) {
+        output.push(move)
+      }
+    }
+    return output
+  }
+
+  private getSquaresWithEnemyPieces(): Square[] {
+    return this._board.squares.filter((sq) => !!sq.piece && sq.piece.color !== this.turn)
+  }
+
+  private getFriendlyKingSquare(): Square {
+    const square = this._board.squares.find(
+      (sq) => sq.piece?.name === 'king' && sq.piece?.color === this.friendlyColor
+    )
+    if (!square) throw new Error('No friendly king found')
+    return square
   }
 }
