@@ -61,7 +61,7 @@ export class PotentialMove {
       piece: from.piece,
       capture: to.piece,
     }
-    return ValidatedMove.getValidatedMove(movePayload, game)
+    return ValidatedMove.getValidatedMove(movePayload, game.board, game.enPassantTarget)
   }
 
   private getEnPassantTarget(): SquareName | null {
@@ -97,7 +97,11 @@ export class ValidatedMove extends PotentialMove {
     this.isLegal = isLegal
   }
 
-  public static getValidatedMove(movePayload: MovePayload, game: Game) {
+  public static getValidatedMove(
+    movePayload: MovePayload,
+    board: Board,
+    enPassantTarget: SquareName | null
+  ) {
     const payload: ValidatedMovePayload = {
       move: movePayload,
       validation: {
@@ -107,12 +111,16 @@ export class ValidatedMove extends PotentialMove {
       },
     }
     const potentialMove = new PotentialMove(movePayload)
-    payload.validation.isValid = ValidatedMove._validate(potentialMove, game)
+    payload.validation.isValid = ValidatedMove._validate(potentialMove, board, enPassantTarget)
 
     return new ValidatedMove(payload)
   }
 
-  private static _validate(move: PotentialMove, game: Game): boolean {
+  private static _validate(
+    move: PotentialMove,
+    board: Board,
+    enPassantTarget: SquareName | null
+  ): boolean {
     const { piece, capture, names } = move.payload
     if (!piece.canMove(move)) return false
 
@@ -121,11 +129,11 @@ export class ValidatedMove extends PotentialMove {
 
     if (isOccupiedBySameColor || isSameSquare) return false
 
-    if (piece.name === 'pawn' && game.enPassantTarget === names.to) return true
+    if (piece.name === 'pawn' && enPassantTarget === names.to) return true
 
     if (piece instanceof Knight) return true
 
-    return this.isNoPiecesInBetween(move, game.board)
+    return this.isNoPiecesInBetween(move, board)
   }
 
   private static isNoPiecesInBetween(move: PotentialMove, board: Board) {

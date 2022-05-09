@@ -139,25 +139,6 @@ export class Board {
     this._board[toY][toX].piece = move.payload.capture
   }
 
-  public generateMoves(game: Game): PotentialMove[] {
-    const allSquares = this._board.flat(2)
-    const squaresWithCorrectPieces = allSquares.filter((sq) => sq.piece?.color === game.turn)
-    const potentialDestinationSquares = allSquares.filter(
-      (sq) => !squaresWithCorrectPieces.includes(sq)
-    )
-
-    const output: PotentialMove[] = []
-    for (const from of squaresWithCorrectPieces) {
-      for (const to of potentialDestinationSquares) {
-        const move = PotentialMove.getValidatedMoveFromSquares(from, to, game)
-        if (move.isValid) {
-          output.push(move)
-        }
-      }
-    }
-    return output
-  }
-
   public getActiveChecks(game: Game): PotentialMove[] {
     const output: PotentialMove[] = []
     const squaresWithEnemyPieces = this.getSquaresWithEnemyPieces(game)

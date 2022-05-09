@@ -2,7 +2,7 @@
 import { Board, SquareName } from './board/board'
 import { Fen } from './fen'
 import { IPiece } from './pieces/piece'
-import { PotentialMove } from './move'
+import { PotentialMove, ValidatedMove } from './move'
 import { Square } from './board/square'
 
 //region types
@@ -108,22 +108,18 @@ export class Game {
   //endregion
 
   public perft(depth: number) {
-    let moves = this._board.generateMoves(this)
+    let moves = this.generateMoves()
 
     if (depth === 1) return moves.length
 
-    let node_count = 0
+    let nodeCount = 0
 
     for (const move of moves) {
       this.makeMove(move)
-      node_count += this.perft(depth - 1)
+      nodeCount += this.perft(depth - 1)
       this.undoMove()
     }
-    return node_count
-  }
-
-  public generateLegalMoves() {
-    return this._board.generateMoves(this)
+    return nodeCount
   }
 
   public makeMove(move: PotentialMove) {
@@ -166,6 +162,41 @@ export class Game {
       const move = PotentialMove.getValidatedMoveFromSquares(square, friendlyKingSquare, this)
       if (move.isValid) {
         output.push(move)
+      }
+    }
+    return output
+  }
+
+  public generateMoves(): PotentialMove[] {
+    const squaresWithCorrectPieces = this._board.squares.filter(
+      (sq) => sq.piece !== null && sq.piece.color === this.turn
+    )
+    const potentialDestinationSquares = this._board.squares.filter(
+      (sq) => !squaresWithCorrectPieces.includes(sq)
+    )
+
+    const output: PotentialMove[] = []
+    for (const from of squaresWithCorrectPieces) {
+      for (const to of potentialDestinationSquares) {
+        const move = ValidatedMove.getValidatedMove(
+          {
+            coords: {
+              from: from.position,
+              to: to.position,
+            },
+            names: {
+              from: from.name,
+              to: to.name,
+            },
+            piece: from.piece as IPiece,
+            capture: to.piece,
+          },
+          this._board,
+          this.enPassantTarget
+        )
+        if (move.isValid) {
+          output.push(move)
+        }
       }
     }
     return output

@@ -186,9 +186,9 @@ describe.concurrent('perft tests', () => {
 
     expect(game.perft(3)).toBe(8902)
   })
-  // test('perft depth 4',  () => {
+  // test('perft depth 4', () => {
   //   const game = new Game()
   //
-  //   expect( game.perft(4)).toBe(197281)
+  //   expect(game.perft(4)).toBe(197281)
   // })
 })
