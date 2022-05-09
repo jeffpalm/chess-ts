@@ -134,8 +134,8 @@ it('can use custom fen 2', () => {
   expect(board.board[7][3].piece).toBeInstanceOf(Queen)
 })
 
-it('generates active checks correctly', async () => {
+it('generates active checks correctly', () => {
   const game = new Game('rnbqkbnr/ppp2ppp/4p3/3p4/Q1PP4/8/PP2PPPP/RNB1KBNR b KQkq - 1 3')
-  const checks = await game.board.getActiveChecks(game)
+  const checks = game.board.getActiveChecks(game)
   expect(checks.length).toBe(1)
 })

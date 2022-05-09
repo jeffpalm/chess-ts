@@ -9,9 +9,9 @@ test('New game creates 16 pieces', () => {
 })
 
 describe.concurrent('game behavior', () => {
-  it('alternates turn color', async () => {
+  it('alternates turn color', () => {
     const game = new Game()
-    let move = await PotentialMove.getValidatedMoveFromSquares(
+    let move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[6][4],
       game.board.board[4][4],
       game
@@ -22,7 +22,7 @@ describe.concurrent('game behavior', () => {
     game.undoMove()
     expect(game.turn).toBe(PieceColor.WHITE)
     game.makeMove(move)
-    move = await PotentialMove.getValidatedMoveFromSquares(
+    move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[1][4],
       game.board.board[3][4],
       game
@@ -31,9 +31,9 @@ describe.concurrent('game behavior', () => {
     expect(game.turn).toBe(PieceColor.WHITE)
   })
 
-  it('alternates half move clock correctly', async () => {
+  it('alternates half move clock correctly', () => {
     const game = new Game()
-    let move = await PotentialMove.getValidatedMoveFromSquares(
+    let move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[6][4],
       game.board.board[4][4],
       game
@@ -44,7 +44,7 @@ describe.concurrent('game behavior', () => {
     game.undoMove()
     expect(game.halfMoveClock).toBe(0)
     game.makeMove(move)
-    move = await PotentialMove.getValidatedMoveFromSquares(
+    move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[1][4],
       game.board.board[3][4],
       game
@@ -53,9 +53,9 @@ describe.concurrent('game behavior', () => {
     expect(game.halfMoveClock).toBe(0)
   })
 
-  it('increments full move clock correctly', async () => {
+  it('increments full move clock correctly', () => {
     const game = new Game()
-    let move = await PotentialMove.getValidatedMoveFromSquares(
+    let move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[6][4],
       game.board.board[4][4],
       game
@@ -66,7 +66,7 @@ describe.concurrent('game behavior', () => {
     game.undoMove()
     expect(game.fullMoveClock).toBe(1)
     game.makeMove(move)
-    move = await PotentialMove.getValidatedMoveFromSquares(
+    move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[1][4],
       game.board.board[3][4],
       game
@@ -75,16 +75,16 @@ describe.concurrent('game behavior', () => {
     expect(game.fullMoveClock).toBe(2)
   })
 
-  it('updates en passant target correctly', async () => {
+  it('updates en passant target correctly', () => {
     const game = new Game()
-    let move = await PotentialMove.getValidatedMoveFromSquares(
+    let move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[6][4],
       game.board.board[4][4],
       game
     )
     game.makeMove(move)
     expect(game.enPassantTarget).toBe('e3')
-    move = await PotentialMove.getValidatedMoveFromSquares(
+    move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[1][4],
       game.board.board[3][4],
       game
@@ -93,16 +93,16 @@ describe.concurrent('game behavior', () => {
     expect(game.enPassantTarget).toBe('e6')
   })
 
-  it('updates move list correctly', async () => {
+  it('updates move list correctly', () => {
     const game = new Game()
-    let move = await PotentialMove.getValidatedMoveFromSquares(
+    let move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[6][4],
       game.board.board[4][4],
       game
     )
     game.makeMove(move)
     expect(game.moves.length).toBe(1)
-    move = await PotentialMove.getValidatedMoveFromSquares(
+    move = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[1][4],
       game.board.board[3][4],
       game
@@ -115,31 +115,31 @@ describe.concurrent('game behavior', () => {
     expect(game.moves.length).toBe(0)
   })
 
-  it('determines if move will put enemy king in check', async () => {
+  it('determines if move will put enemy king in check', () => {
     const game = new Game('rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3')
-    const checkMove = await PotentialMove.getValidatedMoveFromSquares(
+    const checkMove = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[7][3],
       game.board.board[4][0],
       game
     )
-    expect(await game.isMoveCheck(checkMove)).toBe(true)
-    const nonCheckMove = await PotentialMove.getValidatedMoveFromSquares(
+    expect(game.isMoveCheck(checkMove)).toBe(true)
+    const nonCheckMove = PotentialMove.getValidatedMoveFromSquares(
       game.board.board[7][3],
       game.board.board[5][1],
       game
     )
-    expect(await game.isMoveCheck(nonCheckMove)).toBe(false)
+    expect(game.isMoveCheck(nonCheckMove)).toBe(false)
   })
-  it('gets active checks', async () => {
+  it('gets active checks', () => {
     const game = new Game('rnbqkbnr/pp2pppp/8/2pp4/Q1PP4/8/PP2PPPP/RNB1KBNR b KQkq - 1 3')
 
-    const activeChecks = await game.getActiveChecks()
+    const activeChecks = game.getActiveChecks()
 
     expect(activeChecks.length).toBe(1)
     expect(activeChecks[0].payload.names.from).toBe('a4')
     expect(activeChecks[0].payload.names.to).toBe('e8')
   })
-  // it('will handle pinned pieces correctly', async () => {
+  // it('will handle pinned pieces correctly',  () => {
   //   const pinnedKnight = {
   //     fen: 'r1bqkbnr/ppp2ppp/2n1p3/3p4/Q1PP1B2/8/PP2PPPP/RN2KBNR b KQkq - 0 1',
   //     pinnedPosition: {
@@ -159,7 +159,7 @@ describe.concurrent('game behavior', () => {
   //     attempt: { x: aX, y: aY },
   //   } of scenarios) {
   //     const game = new Game(fen)
-  //     const move = await Move.getValidatedMove(
+  //     const move =  Move.getValidatedMove(
   //       game.board.board[y][x],
   //       game.board.board[aY][aX],
   //       game
@@ -170,25 +170,25 @@ describe.concurrent('game behavior', () => {
 })
 
 describe.concurrent('perft tests', () => {
-  it('perft depth 1', async () => {
+  it('perft depth 1', () => {
     const game = new Game()
 
-    expect(await game.perft(1)).toBe(20)
+    expect(game.perft(1)).toBe(20)
   })
 
-  it('perft depth 2', async () => {
+  it('perft depth 2', () => {
     const game = new Game()
 
-    expect(await game.perft(2)).toBe(400)
+    expect(game.perft(2)).toBe(400)
   })
-  it('perft depth 3', async () => {
+  it('perft depth 3', () => {
     const game = new Game()
 
-    expect(await game.perft(3)).toBe(8902)
+    expect(game.perft(3)).toBe(8902)
   })
-  // test('perft depth 4', async () => {
+  // test('perft depth 4',  () => {
   //   const game = new Game()
   //
-  //   expect(await game.perft(4)).toBe(197281)
+  //   expect( game.perft(4)).toBe(197281)
   // })
 })

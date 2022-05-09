@@ -158,12 +158,12 @@ export class Board {
     return output
   }
 
-  public async getActiveChecks(game: Game): Promise<PotentialMove[]> {
+  public getActiveChecks(game: Game): PotentialMove[] {
     const output: PotentialMove[] = []
     const squaresWithEnemyPieces = this.getSquaresWithEnemyPieces(game)
     const friendlyKingSquare = this.getFriendlyKingSquare(game)
     for (const square of squaresWithEnemyPieces) {
-      const move = await PotentialMove.getValidatedMoveFromSquares(square, friendlyKingSquare, game)
+      const move = PotentialMove.getValidatedMoveFromSquares(square, friendlyKingSquare, game)
       if (move.isValid) {
         output.push(move)
       }

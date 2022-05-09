@@ -107,8 +107,8 @@ export class Game {
 
   //endregion
 
-  public async perft(depth: number) {
-    let moves = await this._board.generateMoves(this)
+  public perft(depth: number) {
+    let moves = this._board.generateMoves(this)
 
     if (depth === 1) return moves.length
 
@@ -116,14 +116,14 @@ export class Game {
 
     for (const move of moves) {
       this.makeMove(move)
-      node_count += await this.perft(depth - 1)
+      node_count += this.perft(depth - 1)
       this.undoMove()
     }
     return node_count
   }
 
-  public async generateLegalMoves() {
-    return await this._board.generateMoves(this)
+  public generateLegalMoves() {
+    return this._board.generateMoves(this)
   }
 
   public makeMove(move: PotentialMove) {
@@ -151,19 +151,19 @@ export class Game {
     return prevMove
   }
 
-  public async isMoveCheck(move: PotentialMove) {
+  public isMoveCheck(move: PotentialMove) {
     this.makeMove(move)
-    const checks = await this.board.getActiveChecks(this)
+    const checks = this.board.getActiveChecks(this)
     this.undoMove()
     return checks.length > 0
   }
 
-  public async getActiveChecks(): Promise<PotentialMove[]> {
+  public getActiveChecks(): PotentialMove[] {
     const output: PotentialMove[] = []
     const squaresWithEnemyPieces = this.getSquaresWithEnemyPieces()
     const friendlyKingSquare = this.getFriendlyKingSquare()
     for (const square of squaresWithEnemyPieces) {
-      const move = await PotentialMove.getValidatedMoveFromSquares(square, friendlyKingSquare, this)
+      const move = PotentialMove.getValidatedMoveFromSquares(square, friendlyKingSquare, this)
       if (move.isValid) {
         output.push(move)
       }
