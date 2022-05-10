@@ -1,6 +1,7 @@
 import { describe, expect, it, test } from 'vitest'
 import { Game, PieceColor } from './game'
-import { PotentialMove } from './move'
+import { MoveValidator, PotentialMove } from './move'
+import { Queen } from './pieces/queen'
 
 test('New game creates 16 pieces', () => {
   const game = new Game()
@@ -136,37 +137,51 @@ describe.concurrent('game behavior', () => {
     const activeChecks = game.getActiveChecks()
 
     expect(activeChecks.length).toBe(1)
-    expect(activeChecks[0].payload.names.from).toBe('a4')
-    expect(activeChecks[0].payload.names.to).toBe('e8')
+    expect(activeChecks[0].names.from).toBe('a4')
+    expect(activeChecks[0].names.to).toBe('e8')
   })
-  // it('will handle pinned pieces correctly',  () => {
-  //   const pinnedKnight = {
-  //     fen: 'r1bqkbnr/ppp2ppp/2n1p3/3p4/Q1PP1B2/8/PP2PPPP/RN2KBNR b KQkq - 0 1',
-  //     pinnedPosition: {
-  //       x: 2,
-  //       y: 2,
-  //     },
-  //     attempt: {
-  //       x: 1,
-  //       y: 4,
-  //     },
-  //   }
-  //   const scenarios = [pinnedKnight]
-  //
-  //   for (const {
-  //     fen,
-  //     pinnedPosition: { x, y },
-  //     attempt: { x: aX, y: aY },
-  //   } of scenarios) {
-  //     const game = new Game(fen)
-  //     const move =  Move.getValidatedMove(
-  //       game.board.board[y][x],
-  //       game.board.board[aY][aX],
-  //       game
-  //     )
-  //     expect(move.isValid).toBe(false)
-  //   }
-  // })
+  it('toggles king in check correctly', () => {
+    const game = new Game('rnbqkbnr/pp2pppp/8/2pp4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq c6 0 3')
+
+    game.makeMove(new PotentialMove(game.board.board[7][3], game.board.board[4][0]))
+
+    expect(game.kingInCheck).toBe(true)
+  })
+  it('will put king in check', () => {
+    const game = new Game('r1bqkbnr/ppp2ppp/2n1p3/3p4/Q1PP1B2/8/PP2PPPP/RN2KBNR b KQkq - 0 1')
+
+    const move = new PotentialMove(game.board.board[2][2], game.board.board[4][1])
+
+    expect(game.willPutKingInCheck(move)).toBe(true)
+  })
+  it('will handle pinned pieces correctly',  () => {
+    const pinnedKnight = {
+      fen: 'r1bqkbnr/ppp2ppp/2n1p3/3p4/Q1PP1B2/8/PP2PPPP/RN2KBNR b KQkq - 0 1',
+      pinnedPosition: {
+        x: 2,
+        y: 2,
+      },
+      attempt: {
+        x: 1,
+        y: 4,
+      },
+    }
+    const scenarios = [pinnedKnight]
+
+    for (const {
+      fen,
+      pinnedPosition: { x, y },
+      attempt: { x: aX, y: aY },
+    } of scenarios) {
+      const game = new Game(fen)
+      const move =  new PotentialMove(
+        game.board.board[y][x],
+        game.board.board[aY][aX],
+      )
+      const validatedMove = MoveValidator.validate(move, game)
+      expect(validatedMove.isLegal).toBe(false)
+    }
+  })
 })
 
 describe.concurrent('perft tests', () => {
@@ -186,9 +201,9 @@ describe.concurrent('perft tests', () => {
 
     expect(game.perft(3)).toBe(8902)
   })
-  // test('perft depth 4', () => {
-  //   const game = new Game()
-  //
-  //   expect(game.perft(4)).toBe(197281)
-  // })
+  test('perft depth 4', () => {
+    const game = new Game()
+
+    expect(game.perft(4)).toBe(197281)
+  })
 })

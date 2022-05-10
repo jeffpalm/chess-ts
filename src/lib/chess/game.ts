@@ -2,7 +2,7 @@
 import { Board, SquareName } from './board/board'
 import { Fen } from './fen'
 import { IPiece } from './pieces/piece'
-import { PotentialMove, ValidatedMove } from './move'
+import { MoveValidator, PotentialMove } from './move'
 import { Square } from './board/square'
 
 //region types
@@ -130,7 +130,7 @@ export class Game {
     }
     this._halfMoveClock = this._halfMoveClock === 1 ? 0 : 1
     this._enPassantTarget = move.enPassantTarget
-    // this._kingInCheck = move.isCheck
+    this._kingInCheck = this.getActiveChecks().length > 0
   }
 
   public undoMove() {
@@ -168,38 +168,66 @@ export class Game {
   }
 
   public generateMoves(): PotentialMove[] {
-    const squaresWithCorrectPieces = this._board.squares.filter(
-      (sq) => sq.piece !== null && sq.piece.color === this.turn
-    )
-    const potentialDestinationSquares = this._board.squares.filter(
-      (sq) => !squaresWithCorrectPieces.includes(sq)
-    )
+    const squaresWithCorrectPieces = this.getSquaresWithFriendlyPieces()
+    const potentialDestinationSquares = this.getAllSquaresWithNoFriendlyPieces(squaresWithCorrectPieces)
 
     const output: PotentialMove[] = []
     for (const from of squaresWithCorrectPieces) {
       for (const to of potentialDestinationSquares) {
-        const move = ValidatedMove.getValidatedMove(
+        const potentialMove = new PotentialMove(
           {
             coords: {
               from: from.position,
-              to: to.position,
+              to: to.position
             },
             names: {
               from: from.name,
-              to: to.name,
+              to: to.name
             },
             piece: from.piece as IPiece,
-            capture: to.piece,
-          },
-          this._board,
-          this.enPassantTarget
+            capture: to.piece
+          }
         )
-        if (move.isValid) {
-          output.push(move)
+        const validatedMove = MoveValidator.validate(potentialMove, this)
+        if (validatedMove.isValid && validatedMove.isLegal) {
+          output.push(potentialMove)
         }
       }
     }
     return output
+  }
+
+  public getIllegalChecks(): PotentialMove[] {
+    const output: PotentialMove[] = []
+    const squaresWithFriendlyPieces = this.getSquaresWithFriendlyPieces()
+    const enemyKingSquare = this.getEnemyKingSquare()
+    for (const from of squaresWithFriendlyPieces) {
+      const potentialMove = new PotentialMove(from, enemyKingSquare)
+      const validatedMove = MoveValidator.validate(potentialMove, this)
+      if (validatedMove.isValid) {
+        output.push(validatedMove)
+      }
+    }
+    return output
+  }
+
+  public willPutKingInCheck(move: PotentialMove) {
+    this.makeMove(move)
+    const checks = this.getIllegalChecks()
+    this.undoMove()
+    return checks.length > 0
+  }
+
+  private getAllSquaresWithNoFriendlyPieces(squaresWithFriendlyPieces: Square[]) {
+    return this._board.squares.filter(
+      (sq) => !squaresWithFriendlyPieces.includes(sq)
+    )
+  }
+
+  private getSquaresWithFriendlyPieces() {
+    return this._board.squares.filter(
+      (sq) => sq.piece !== null && sq.piece.color === this.turn
+    )
   }
 
   private getSquaresWithEnemyPieces(): Square[] {
@@ -211,6 +239,14 @@ export class Game {
       (sq) => sq.piece?.name === 'king' && sq.piece?.color === this.friendlyColor
     )
     if (!square) throw new Error('No friendly king found')
+    return square
+  }
+
+  private getEnemyKingSquare(): Square {
+    const square = this._board.squares.find(
+      (sq) => sq.piece?.name === 'king' && sq.piece?.color === this.enemyColor
+    )
+    if (!square) throw new Error('No enemy king found')
     return square
   }
 }

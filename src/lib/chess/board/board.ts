@@ -125,18 +125,18 @@ export class Board {
   }
 
   public makeMove(move: PotentialMove) {
-    const { x: fromX, y: fromY } = move.payload.coords.from
-    const { x: toX, y: toY } = move.payload.coords.to
+    const { x: fromX, y: fromY } = move.coords.from
+    const { x: toX, y: toY } = move.coords.to
     this._board[fromY][fromX].piece = null
-    this._board[toY][toX].piece = move.payload.piece
+    this._board[toY][toX].piece = move.piece
     return move
   }
 
   public undoMove(move: PotentialMove) {
-    const { x: fromX, y: fromY } = move.payload.coords.from
-    const { x: toX, y: toY } = move.payload.coords.to
-    this._board[fromY][fromX].piece = move.payload.piece
-    this._board[toY][toX].piece = move.payload.capture
+    const { x: fromX, y: fromY } = move.coords.from
+    const { x: toX, y: toY } = move.coords.to
+    this._board[fromY][fromX].piece = move.piece
+    this._board[toY][toX].piece = move.capture
   }
 
   public getActiveChecks(game: Game): PotentialMove[] {

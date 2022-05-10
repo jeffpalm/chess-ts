@@ -15,7 +15,7 @@ export class Pawn extends AbstractPiece implements IPiece {
 
   public canMove(move: PotentialMove): boolean {
     const { dx: _dx, dy } = move.deltas
-    const { capture, names, coords } = move.payload
+    const { capture, names, coords } = move
     const dyAbs = abs(dy)
     const dx = abs(_dx)
 
