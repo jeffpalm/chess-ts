@@ -23,14 +23,18 @@ export class Pawn extends AbstractPiece implements IPiece {
     // dx === 1 || dx === 0
     // dy === 1 || dy === 2 || dy === -1 || dy === -2
 
+    if (dyAbs === 2 && dx === 1) return false
+    // dx === 1 && (dy === 1 || dy === -1)
+    // dx === 0 && (dy === 2 || dy === 1 || dy === -1 || dy === -2)
+
     // Cannot move forward into another piece
     if (dx === 0 && !!capture) return false
 
     // Can only attack diagonal
     if (dx === 1 && capture === null) return false
 
-    // Handle en passant
-    if (dx === 1 && this.enPassantTarget === names.to) return true
+    // // Handle en passant
+    // if (dx === 1 && this.enPassantTarget === names.to) return true
 
     const isInOriginalPosition =
       this.color === PieceColor.WHITE ? coords.from.y === 6 : coords.from.y === 1

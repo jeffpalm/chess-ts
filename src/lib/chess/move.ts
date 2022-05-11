@@ -5,6 +5,9 @@ import { Knight } from './pieces/knight'
 import { intBetween } from './utils'
 import { Game, PieceColor } from './game'
 import { King } from './pieces/king'
+import { Pawn } from './pieces/pawn'
+
+const abs = Math.abs
 
 const isMovePayload = (param: MovePayload | Square): param is MovePayload => !(param instanceof Square)
 
@@ -141,15 +144,19 @@ class ValidatedMove extends PotentialMove {
     board: Board,
     enPassantTarget: SquareName | null
   ): boolean {
-    const { piece, capture, names } = this
+    const { piece, capture, names, deltas: {dx} } = this
     if (!piece.canMove(this)) return false
 
-    const isOccupiedBySameColor = piece.color === capture?.color
+    const isOccupiedBySameColor = capture && piece.color === capture.color
     const isSameSquare = names.to === names.from
 
     if (isOccupiedBySameColor || isSameSquare) return false
 
-    if (piece.name === 'pawn' && enPassantTarget === names.to) return true
+    if (piece instanceof Pawn) {
+      const isValidEnPassant = abs(dx) === 1 && !capture && names.to === enPassantTarget
+      if (isValidEnPassant) return true
+      if (abs(dx) === 1 && !capture) return false
+    }
 
     if (piece instanceof Knight) return true
 
