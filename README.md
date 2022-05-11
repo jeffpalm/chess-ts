@@ -3,9 +3,9 @@ Status: Active development
 # Essential knowledge
 
 ## Board Representation
-![Project board representation][board-representation]
+![Project board representation](https://github.com/jeffpalm/chess-ts/raw/main/assets/board-representation.png)
 
-## FEN Notation [source]: https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
+## FEN Notation [source](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
 ### Definition
 A FEN "record" defines a particular game position, all in one text line and using only the ASCII character set. A text file with only FEN data records should have the file extension ".fen".[4]
 
@@ -32,6 +32,3 @@ And then after 1...c5:
 And then after 2.Nf3:
 
 ```rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2```
-
-
-[board-representation] https://github.com/jeffpalm/chess-ts/raw/main/assets/board-representation.png "Board Representation"
