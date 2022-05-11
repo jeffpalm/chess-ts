@@ -2,7 +2,8 @@ Status: Active development
 
 # Essential knowledge
 
-[board-representation] https://github.com/jeffpalm/chess-ts/raw/main/assets/board-representation.png "Board Representation"
+## Board Representation
+![Project board representation][board-representation]
 
 ## FEN Notation [source]: https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
 ### Definition
@@ -31,3 +32,6 @@ And then after 1...c5:
 And then after 2.Nf3:
 
 ```rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2```
+
+
+[board-representation] https://github.com/jeffpalm/chess-ts/raw/main/assets/board-representation.png "Board Representation"
