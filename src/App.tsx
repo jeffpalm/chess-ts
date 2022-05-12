@@ -14,7 +14,7 @@ function App() {
             return (
               <div
                 key={square.name}
-                className="Square flex light rotW"
+                className="Square flex light rotW square-info"
                 id={square.name}
               >
                 {square.name}

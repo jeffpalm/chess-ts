@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Game } from './game'
+import { Game } from '../game'
 
 describe.concurrent('perft tests', () => {
   it('perft depth 1', () => {
@@ -23,4 +23,9 @@ describe.concurrent('perft tests', () => {
   
     expect(game.perft(4)).toBe(197281)
   })
+  // it('perft depth 5', () => {
+  //   const game = new Game()
+
+  //   expect(game.perft(5)).toBe(4865609)
+  // })
 })

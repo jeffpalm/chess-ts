@@ -232,6 +232,17 @@ h1,
   background-position: bottom 5px center;
 }
 
+.square-info {
+  color: black !important;
+  justify-content: center;
+  align-items: center;
+  background-color:hsl(170, 11%, 59%);
+  box-sizing: border-box;
+  outline-style: inset;
+  outline-width: 2px;
+  outline-colord: #e3f2fd;
+}
+
 .selected,
 .Square:hover {
   cursor: pointer;

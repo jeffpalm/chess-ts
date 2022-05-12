@@ -1,5 +1,5 @@
 import { Board, SquareName } from './board/board'
-import { PieceColor, Rank } from './game'
+import { Game, PieceColor, Rank } from './game'
 import { Pawn } from './pieces/pawn'
 import { Knight } from './pieces/knight'
 import { Bishop } from './pieces/bishop'
@@ -80,8 +80,8 @@ export class Fen {
   public readonly halfMoveClock: HalfMoveClock
   public readonly fullMoveClock: FullMoveClock
 
-  constructor(fen: string) {
-    const fenArray = fen.split(' ')
+  constructor(arg: string | Game) {
+    const fenArray = typeof arg === 'string' ? arg.split(' ') : this.gameToFen(arg).split(' ')
     this.rows = this.parseRows(fenArray[0])
     this.sideToMove = fenArray[1] as SideToMove
     this.castlingAbility = fenArray[2] as CastlingAbility
@@ -106,16 +106,64 @@ export class Fen {
     return fenRow.split('') as FenRow
   }
 
-  static stringify(fenArray: FenArray): string {
-    return fenArray.join(' ')
-  }
-
   private parseRows(rowsString: string): FenRows {
     const splits = rowsString.split('/')
     if (splits.length !== 8) {
       throw new Error('Invalid FEN')
     }
     return splits as unknown as FenRows
+  }
+
+  private gameToFen(game: Game): string {
+    const parts = [
+      this.boardToFen(game.board),
+      game.turn,
+      game.castlingAbility,
+      game.enPassantTarget === null ? '-' : game.enPassantTarget,
+      game.halfMoveClock,
+      game.fullMoveClock,
+    ]
+    return parts.join(' ')
+  }
+
+  private boardToFen(board: Board): string {
+    let fen: string = ''
+
+    let emptySquares = 0
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        const piece = board.board[y][x].piece
+        if (piece === null) {
+          emptySquares++
+          if (x === 7) {
+            fen += emptySquares.toString()
+          }
+          continue
+        }
+        // piece is not null
+        fen += piece.symbol
+      }
+      if (y !== 7) fen += '/'
+      emptySquares = 0
+    }
+
+    return fen
+  }
+
+  public toString(): string {
+    const parts = [
+      this.rowsToString(),
+      this.sideToMove,
+      this.castlingAbility,
+      this.enPassantTarget,
+      this.halfMoveClock,
+      this.fullMoveClock
+    ]
+    return parts.join(' ')
+  }
+
+  public rowsToString(): string {
+    return this.rows.join('/')
   }
 }
 

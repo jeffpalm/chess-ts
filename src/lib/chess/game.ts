@@ -1,6 +1,6 @@
 // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 import { Board, SquareName } from './board/board'
-import { Fen } from './fen'
+import { CastlingAbility, Fen } from './fen'
 import { IPiece } from './pieces/piece'
 import { MoveValidator, PotentialMove } from './move'
 import { Square } from './board/square'
@@ -15,8 +15,8 @@ export enum SquareColor {
 }
 
 export enum PieceColor {
-  WHITE = 'WHITE',
-  BLACK = 'BLACK',
+  WHITE = 'w',
+  BLACK = 'b',
 }
 
 export interface IGame {
@@ -40,6 +40,7 @@ export class Game {
     this._turn = this._fen.sideToMove === 'w' ? PieceColor.WHITE : PieceColor.BLACK
     this._halfMoveClock = this._fen.halfMoveClock
     this._fullMoveClock = this._fen.fullMoveClock
+    this._castlingAbility = this._fen.castlingAbility
   }
 
   //region properties
@@ -105,6 +106,23 @@ export class Game {
     return this._enPassantTarget
   }
 
+  private _castlingAbilityStatus: {
+    k: boolean,
+    K: boolean,
+    q: boolean,
+    Q: boolean,
+  } = {
+    k: true,
+    K: true,
+    q: true,
+    Q: true,
+  }
+
+  private _castlingAbility: CastlingAbility = 'KQkq'
+  public get castlingAbility(): CastlingAbility {
+    return this._castlingAbility
+  }
+
   //endregion
 
   public perft(depth: number) {
@@ -120,6 +138,12 @@ export class Game {
       this.undoMove()
     }
     return nodeCount
+  }
+
+  public async perftAsync(depth: number) {
+    let moves = this.generateMoves()
+
+    if (depth === 1) return moves.length
   }
 
   public makeMove(move: PotentialMove) {
