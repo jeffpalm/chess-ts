@@ -4,15 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
     "test": "vitest",
     "coverage": "vitest run --coverage"
-  },
-  "dependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.30",
@@ -24,7 +17,6 @@
     "ts-node": "^10.7.0",
     "tslib": "^2.4.0",
     "typescript": "^4.6.4",
-    "vite": "^2.9.5",
     "vitest": "^0.10.0"
   },
   "prettier": {

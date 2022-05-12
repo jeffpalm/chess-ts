@@ -140,12 +140,6 @@ export class Game {
     return nodeCount
   }
 
-  public async perftAsync(depth: number) {
-    let moves = this.generateMoves()
-
-    if (depth === 1) return moves.length
-  }
-
   public makeMove(move: PotentialMove) {
     this._moves.push(this._board.makeMove(move))
     this._turn = this._turn === PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE
